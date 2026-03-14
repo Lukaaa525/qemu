@@ -300,9 +300,44 @@ struct MappedRamHeader {
 
 ---
 
-## 七、关键参考链接
+## 七、相关前置工作与 Patch 系列
+
+### 7.1 mapped-ram 特性（已合并，前置依赖）
+
+由 **Fabiano Rosas** 开发，使 RAM 页面在迁移文件中具有固定偏移量，支持随机访问。这是 Fast Snapshot Load 的 **必要前提**。
+
+- 文档: https://www.qemu.org/docs/master/devel/migration/mapped-ram.html
+- 配置方式: `migrate_set_capability mapped-ram on` + `migrate file:/path/to/file`
+
+### 7.2 Threadify Loadvm Process RFC（2025年9月）
+
+Peter Xu 提交了 9 个 patch 的 RFC 系列，将 loadvm 从协程模型转为 **线程模型**。这是直接相关的基础工作：
+- 动机: 现代迁移特性（multifd, postcopy, mapped-ram, vfio）已使用线程，协程模型不一致
+- 在关键设备状态加载点保持 BQL
+- [RFC PATCH 0/9 migration: Threadify loadvm process](https://www.mail-archive.com/qemu-devel@nongnu.org/msg1145648.html)
+
+### 7.3 Marco Cavenati 的 mapped-ram snapshot 兼容 patches（已合并）
+
+- [PATCH v2 0/2: Add support for mapped-ram with snapshots](https://www.mail-archive.com/qemu-devel@nongnu.org/msg1143987.html)
+- [PULL 05/36: mapped-ram: handle zero pages](http://www.mail-archive.com/qemu-devel@nongnu.org/msg1151366.html)
+- 解决了 mapped-ram 与 loadvm snapshot restore 的兼容性问题
+
+### 7.4 历史相关工作：userfaultfd 快照（2016）
+
+Hailiang Zhang 早期的 userfaultfd 快照相关工作：
+- [RFC 00/13 Live memory snapshot based on userfaultfd](https://www.mail-archive.com/qemu-devel@nongnu.org/msg394897.html)
+
+### 7.5 当前实现状态
+
+截至目前，**尚无** Fast Snapshot Load 本身的 RFC 或 patch。项目仍处于 GSoC 提案阶段，等待 contributor 实现。
+
+---
+
+## 八、关键参考链接
 
 ### 官方资源
+- [QEMU Snapshotting Improvements Wiki](https://wiki.qemu.org/Features/SnapshottingImprovements)
+- [QEMU Snapshot API Deep Dive (Airbus SecLab)](https://airbus-seclab.github.io/qemu_blog/snapshot.html)
 - [QEMU GSoC 2026 Wiki](https://wiki.qemu.org/Google_Summer_of_Code_2026)
 - [QEMU GSoC 2026 Blog Announcement](https://www.qemu.org/2026/02/20/gsoc-2026/)
 - [Fast Snapshot Load ToDo Page](https://wiki.qemu.org/ToDo/LiveMigration#Fast_load_snapshot)
