@@ -31,34 +31,41 @@ CC 列表: peterx@redhat.com, farosas@suse.de, berrange@redhat.com (Daniel P. Be
 
 ## 三、"像 AI 写的" 的迹象分析
 
-### 3.1 直接证据
-**`Made-with: Cursor`** 标签直接出现在 commit message 中（459cc1fa34 的 patch files commit）。这是最直接的证据表明使用了 AI 辅助工具。
+### 3.1 关于 `Made-with: Cursor`
+`Made-with: Cursor` 标签 **只出现在仓库内部的管理性 commit（459cc1fa34）中**，
+该 commit 是把 .patch 文件打包存入仓库用的，**不是发到邮件列表的补丁内容**。
+实际发到社区的 4 个 patch 文件（cover letter + 3 个补丁）中完全没有任何 AI
+相关标签。社区的 Peter Xu 和 Daniel 看不到这个标签。
 
-### 3.2 代码风格特征
-以下特征在 QEMU 社区经验丰富的开发者看来可能引发怀疑：
+因此 **不存在"直接暴露 AI 辅助"的证据**，社区维护者无法从补丁本身判断是否
+使用了 AI 工具。
 
-1. **Commit message 过于详尽和格式化**
+### 3.2 代码风格特征——是否会让 reviewer 起疑？
+以下特征在 QEMU 社区经验丰富的开发者看来 **可能** 引发怀疑，但也可能被解读
+为"新人写得比较认真"：
+
+1. **Commit message 非常详尽和格式化**
    - 每个 commit message 都像一篇完整的小论文，包含问题描述、根因分析、修复方案、返回值语义等
    - QEMU 社区的资深开发者（如 Peter Xu）通常写得更简洁直接
-   - 例如 "storing the return value of qio_channel_pread() (ssize_t) in a size_t variable. On I/O error the -1 return value wraps to SIZE_MAX, producing a nonsensical read size in the error message." 这种写法过于教科书式
+   - 例如 "storing the return value of qio_channel_pread() (ssize_t) in a size_t variable. On I/O error the -1 return value wraps to SIZE_MAX, producing a nonsensical read size in the error message." 这种写法略显教科书式
+   - 但这也完全可以是非母语开发者认真写文档的结果，不能作为 AI 的判定依据
 
 2. **Cover letter 的结构**
-   - 完美的 markdown 表格式变更日志
    - 对每个 patch 都有 [NEW] 标记
-   - "Note: qemu_get_buffer_at() in migration/qemu-file.c has a similar type mismatch..." 这种主动声明后续工作的方式，虽然本身不是坏事，但过于周全
+   - "Note: qemu_get_buffer_at() in migration/qemu-file.c has a similar type mismatch..." 主动声明后续工作
+   - 这些都是好的实践，只是比大多数贡献者做得更"工整"
 
 3. **代码本身的特征**
    - `qio_channel_preadv_all_eof()` 的实现几乎是 `qio_channel_readv_full_all_eof()` 的精确删减版（去掉 FD 相关逻辑）
-   - 这本身是正确的做法（遵循现有模式），但精确到变量命名、代码结构、注释风格完全一致的程度，更像是机械性的模式复制
-   - 测试代码的命名规范 (`test_io_channel_preadv_all_eof_partial`, `test_io_channel_preadv_all_eof_is_error`) 过于系统化
+   - 这本身是正确的做法（Peter 就是要求遵循现有模式），变量命名、代码结构一致是合理的
 
 4. **v1 到 v2 的迭代速度**
    - v1: 2026-03-16
    - v2: 2026-03-18（仅 2 天）
    - 在 2 天内完成了：新增 3 个 API 函数 + 完整 doc comments + 修改 migration 调用方 + 5 个单元测试
-   - 对于一个熟悉代码库的人来说可以做到，但结合其他迹象，速度值得注意
+   - 对于一个熟悉代码库的人来说完全可以做到，这个工作量并不算大
 
-### 3.3 但也有"不太像 AI 乱写"的方面
+### 3.3 代码质量的正面评价
 
 1. **代码质量实际上是不错的**
    - `ERRP_GUARD()` 的使用是正确的 QEMU 惯用法
@@ -112,10 +119,10 @@ CC 列表: peterx@redhat.com, farosas@suse.de, berrange@redhat.com (Daniel P. Be
 
 虽然我没有找到明确的邮件证据表明被忽略，但以下因素可能存在：
 
-1. **AI 辅助开发的社区态度**
-   - `Made-with: Cursor` 标签可能引起资深维护者的警惕
-   - QEMU 社区（尤其是 Red Hat 阵营的维护者）对 AI 生成代码的态度可能比较保守
-   - 维护者可能会对 AI 辅助的补丁施加更高的审查标准
+1. **社区对 AI 辅助开发的态度（但本例中不适用）**
+   - 如果维护者知道补丁是 AI 辅助生成的，可能施加更高审查标准
+   - 但实际发出的补丁中没有任何 AI 标签，社区看不出来
+   - Commit message 风格虽然比较"教科书"，但这也可以是认真的非母语开发者的表现
 
 2. **贡献者信任度**
    - Junjie Cao 在 QEMU 主线的贡献记录很少（历史 commit 屈指可数且年代久远）
@@ -139,11 +146,10 @@ CC 列表: peterx@redhat.com, farosas@suse.de, berrange@redhat.com (Daniel P. Be
 - 代码遵循现有模式，质量过关
 - 提供了单元测试
 
-**问题：**
-- `Made-with: Cursor` 标签暴露了 AI 辅助，可能影响社区信任
-- Commit message 过于"完美"，反而显得不自然
-- 补丁文件（.patch）被 commit 到仓库中（459cc1fa34），这在正式开发流程中非常不寻常
+**可改进之处：**
+- Commit message 写得非常工整，可能显得不太自然，但不构成问题
 - 没有同时修复 `qemu_get_buffer_at()` 的相同问题（虽然 cover letter 中声明了后续计划）
+- 补丁文件（.patch）被 commit 到内部仓库中（459cc1fa34），这只是内部工作流管理，不影响社区
 
 ### 是否被"有意忽略"：**不太可能**
 
@@ -155,4 +161,4 @@ CC 列表: peterx@redhat.com, farosas@suse.de, berrange@redhat.com (Daniel P. Be
 ### 建议后续关注：
 - 如果 7 天后仍无回复，可以发一封 gentle ping
 - 考虑在 v3 中同时修复 `qemu_get_buffer_at()` 以展示完整性
-- 移除 `Made-with: Cursor` 标签（如果在意社区观感的话）
+- 发到社区的补丁中不包含 AI 标签，这方面没有问题
