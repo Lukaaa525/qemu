@@ -3429,6 +3429,24 @@ static int virtio_net_rss_post_load(void *opaque, int version_id)
         n->rss_data.supported_hash_types = VIRTIO_NET_RSS_SUPPORTED_HASHES;
     }
 
+    if (n->rss_data.redirect) {
+        if (n->rss_data.indirections_len == 0 ||
+            n->rss_data.indirections_len > VIRTIO_NET_RSS_MAX_TABLE_LEN ||
+            !is_power_of_2(n->rss_data.indirections_len)) {
+            error_report("virtio-net: saved image has invalid RSS "
+                         "indirections_len: %u",
+                         n->rss_data.indirections_len);
+            return -EINVAL;
+        }
+    }
+
+    if (n->rss_data.default_queue >= n->max_queue_pairs) {
+        error_report("virtio-net: saved image has invalid RSS "
+                     "default_queue: %u (max: %u)",
+                     n->rss_data.default_queue, n->max_queue_pairs);
+        return -EINVAL;
+    }
+
     return 0;
 }
 
